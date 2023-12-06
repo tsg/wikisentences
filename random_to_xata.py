@@ -3,6 +3,7 @@ from xata.client import XataClient
 from xata.helpers import BulkProcessor
 import numpy 
 import threading
+import time
 
 
 def read_file_in_batches(filename, batch_size):
@@ -19,7 +20,15 @@ def read_file_in_batches(filename, batch_size):
 def random_embedding():
     return numpy.random.uniform(low=0.5, high=13.3, size=(1536,))
 
-def worker(thread_id, batch_size, global_counter, lock):
+def report_records_per_minute(records_per_minute, lock):
+    while True:
+        time.sleep(60)  # Wait for one minute
+        with lock:
+            print(f"Records inserted in the last minute: {records_per_minute[0]}")
+            records_per_minute[0] = 0  # Reset the count for the next minute
+
+
+def worker(thread_id, batch_size, global_counter, records_per_minute, lock):
     client = XataClient()
     bp = BulkProcessor(client)
 
@@ -35,19 +44,26 @@ def worker(thread_id, batch_size, global_counter, lock):
         
         with lock:
             global_counter[0] += 1
+            records_per_minute[0] += batch_size
             print(f"Wrote batch {global_counter[0]} ({global_counter[0]*batch_size} records)")
 
 def main():
     threads = []
     batch_size = 1000  # Adjust as needed
     global_counter = [0]  # Using a list as a mutable object
+    records_per_minute = [0]  # Records inserted per minute
     lock = threading.Lock()
 
     for i in range(10):  # Creating 10 threads
-        t = threading.Thread(target=worker, args=(i, batch_size, global_counter, lock))
+        t = threading.Thread(target=worker, args=(i, batch_size, global_counter, records_per_minute, lock))
         t.start()
         threads.append(t)
-        
+
+    # Start a separate thread for reporting records per minute
+    reporter_thread = threading.Thread(target=report_records_per_minute, args=(records_per_minute, lock))
+    reporter_thread.start()
+    threads.append(reporter_thread)
+
     for t in threads:
         t.join()  # Waiting for all threads to complete
 
