@@ -18,7 +18,7 @@ def read_file_in_batches(filename, batch_size):
             yield batch
 
 def random_embedding():
-    return numpy.random.uniform(low=0.5, high=13.3, size=(1536,))
+    return numpy.random.uniform(low=-2.1, high=4.0, size=(1536,))
 
 def report_records_per_minute(records_per_minute, lock):
     while True:

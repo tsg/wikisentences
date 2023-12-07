@@ -25,7 +25,7 @@ def main():
     filename = "/Users/tsg/Downloads/wikisent2.txt"
     batch_size = 500  # Adjust as needed
     i = 0
-    skip = 0
+    skip = 150
     for batch in read_file_in_batches(filename, batch_size):
         if i < skip:
             i += 1
